@@ -1,0 +1,1025 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ANA Prompt Generator Dashboard</title>
+<style>
+  /* ============ THEME / TOKENS ============ */
+  :root{
+    --green:#106147;
+    --soft-pink:#f0cce1;
+    --bold-pink:#d34f9b;
+    --mint:#7fcaab;
+    --cream:#e0e8c5;
+    --yellow:#fee88e;
+    --offwhite:#fbfaf7;
+    --light-gray:#f2f3f0;
+    --charcoal:#2b2b2b;
+    --line:#e7e7e1;
+    --shadow:0 8px 30px rgba(16,97,71,.08);
+    --shadow-sm:0 2px 10px rgba(0,0,0,.05);
+    --radius:18px;
+    --radius-sm:12px;
+    --font: "Poppins","Segoe UI",system-ui,-apple-system,"Helvetica Neue",Arial,sans-serif;
+    --script: "Segoe Script","Bradley Hand","Brush Script MT",cursive;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:var(--font);
+    background:linear-gradient(180deg,#fbfaf7 0%, #f4f6ef 100%);
+    color:var(--charcoal);
+    font-size:14px;
+    line-height:1.5;
+  }
+  a{color:var(--green);}
+  h1,h2,h3,h4{margin:0 0 .4em;font-weight:600;letter-spacing:-.01em;}
+  .script{font-family:var(--script);font-weight:400;}
+
+  /* ============ LAYOUT ============ */
+  .app{display:flex;min-height:100vh;}
+  .sidebar{
+    width:248px;flex-shrink:0;background:#fff;border-right:1px solid var(--line);
+    padding:22px 14px;position:sticky;top:0;height:100vh;overflow-y:auto;
+  }
+  .brandmark{display:flex;align-items:center;gap:10px;padding:6px 8px 16px;}
+  .brandmark .dot{width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,var(--green),var(--mint));display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;}
+  .brandmark b{font-size:15px;display:block;}
+  .brandmark small{color:#888;font-size:11px;}
+  .nav{display:flex;flex-direction:column;gap:3px;margin-top:6px;}
+  .nav button{
+    text-align:left;border:0;background:transparent;padding:10px 12px;border-radius:10px;
+    cursor:pointer;font:inherit;color:#4a4a4a;display:flex;align-items:center;gap:10px;transition:.15s;
+  }
+  .nav button:hover{background:var(--light-gray);}
+  .nav button.active{background:var(--green);color:#fff;font-weight:600;}
+  .nav .ic{width:20px;text-align:center;}
+  .main{flex:1;min-width:0;padding:26px 32px 80px;max-width:1180px;}
+
+  /* ============ HEADER ============ */
+  .topbar{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;flex-wrap:wrap;margin-bottom:22px;}
+  .topbar h1{font-size:26px;margin-bottom:2px;}
+  .topbar .sub{color:#777;font-size:13px;}
+  .badges{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px;}
+  .swatch{width:26px;height:26px;border-radius:7px;border:1px solid rgba(0,0,0,.06);box-shadow:var(--shadow-sm);}
+  .note-chip{background:var(--yellow);color:#6b5500;border-radius:20px;padding:6px 14px;font-size:11.5px;font-weight:500;display:inline-flex;align-items:center;gap:6px;}
+
+  /* ============ CARDS ============ */
+  .card{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);padding:22px;margin-bottom:20px;}
+  .card h2{font-size:17px;display:flex;align-items:center;gap:8px;}
+  .card .desc{color:#888;font-size:12.5px;margin-top:-4px;margin-bottom:14px;}
+  .grid{display:grid;gap:14px;}
+  .grid-2{grid-template-columns:1fr 1fr;}
+  .grid-3{grid-template-columns:1fr 1fr 1fr;}
+  @media(max-width:900px){.grid-2,.grid-3{grid-template-columns:1fr;}}
+
+  /* ============ FORM ============ */
+  label.f{display:block;font-size:12px;font-weight:600;color:#555;margin-bottom:5px;}
+  input[type=text],input[type=number],input[type=url],select,textarea{
+    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:var(--radius-sm);
+    font:inherit;font-size:13px;background:var(--offwhite);color:var(--charcoal);transition:.15s;
+  }
+  input:focus,select:focus,textarea:focus{outline:none;border-color:var(--mint);background:#fff;box-shadow:0 0 0 3px rgba(127,202,171,.18);}
+  textarea{resize:vertical;min-height:74px;line-height:1.5;}
+  .field{margin-bottom:4px;}
+
+  /* ============ BUTTONS ============ */
+  .btn{border:0;border-radius:11px;padding:11px 18px;font:inherit;font-weight:600;font-size:13px;cursor:pointer;transition:.15s;display:inline-flex;align-items:center;gap:7px;}
+  .btn:active{transform:translateY(1px);}
+  .btn-primary{background:var(--green);color:#fff;}
+  .btn-primary:hover{background:#0d503b;}
+  .btn-pink{background:var(--bold-pink);color:#fff;}
+  .btn-pink:hover{background:#bd3f86;}
+  .btn-ghost{background:var(--light-gray);color:#444;}
+  .btn-ghost:hover{background:#e6e7e2;}
+  .btn-sm{padding:7px 12px;font-size:12px;border-radius:9px;}
+  .btn-row{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px;}
+
+  /* ============ CHIPS / TOGGLES ============ */
+  .chips{display:flex;flex-wrap:wrap;gap:9px;}
+  .chip{border:1px solid var(--line);background:#fff;border-radius:30px;padding:8px 15px;font-size:12.5px;cursor:pointer;transition:.15s;user-select:none;}
+  .chip:hover{border-color:var(--mint);}
+  .chip.on{background:var(--green);color:#fff;border-color:var(--green);}
+  .qcheck{display:flex;align-items:center;gap:9px;font-size:12.5px;background:var(--offwhite);border:1px solid var(--line);border-radius:10px;padding:9px 11px;cursor:pointer;}
+  .qcheck input{width:16px;height:16px;accent-color:var(--green);}
+
+  /* ============ THEME CARDS ============ */
+  .theme-cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:14px;}
+  .theme-card{border:2px solid var(--line);border-radius:16px;padding:14px;cursor:pointer;transition:.15s;background:#fff;}
+  .theme-card:hover{border-color:var(--mint);transform:translateY(-2px);}
+  .theme-card.on{border-color:var(--green);box-shadow:var(--shadow);}
+  .theme-card h4{font-size:13.5px;margin-bottom:3px;}
+  .theme-card .swatches{display:flex;gap:5px;margin:9px 0;}
+  .theme-card .sw{width:100%;height:22px;border-radius:6px;}
+  .theme-card small{color:#888;font-size:11px;display:block;}
+  .theme-card .mood{display:inline-block;margin-top:8px;font-size:10.5px;background:var(--cream);color:#566312;padding:3px 9px;border-radius:20px;}
+
+  /* ============ TABS / OUTPUT ============ */
+  .tabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:14px;border-bottom:1px solid var(--line);padding-bottom:12px;}
+  .tab{border:1px solid var(--line);background:#fff;border-radius:9px;padding:8px 13px;font-size:12px;cursor:pointer;font-weight:500;color:#555;}
+  .tab.on{background:var(--green);color:#fff;border-color:var(--green);}
+  .output-box{position:relative;background:#0f1c17;color:#e9f3ee;border-radius:14px;padding:18px 18px 18px;font-size:12.8px;line-height:1.65;white-space:pre-wrap;word-break:break-word;font-family:"SF Mono","Consolas","Menlo",monospace;max-height:520px;overflow:auto;}
+  .output-actions{display:flex;gap:9px;flex-wrap:wrap;margin-top:14px;}
+
+  /* ============ HISTORY / LISTS ============ */
+  .list-item{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line);border-radius:12px;margin-bottom:9px;background:var(--offwhite);}
+  .list-item .meta{font-size:11.5px;color:#888;}
+  .list-item .ttl{font-weight:600;font-size:13px;}
+  .pill{font-size:10.5px;background:var(--soft-pink);color:#8a2c64;padding:2px 9px;border-radius:20px;margin-left:6px;}
+
+  /* slide planner / scene rows */
+  .row-edit{display:grid;grid-template-columns:30px 1fr 1fr 1fr auto;gap:8px;align-items:center;padding:9px;border:1px solid var(--line);border-radius:11px;margin-bottom:8px;background:var(--offwhite);}
+  .row-edit .num{width:26px;height:26px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;}
+  @media(max-width:760px){.row-edit{grid-template-columns:1fr;}}
+
+  .section-hidden{display:none;}
+  .help{background:var(--cream);border-radius:12px;padding:14px 16px;font-size:12.5px;color:#4a5023;}
+  .help b{color:#2f3a0a;}
+  .muted{color:#999;font-size:12px;}
+  .divider{height:1px;background:var(--line);margin:16px 0;}
+  .toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:var(--charcoal);color:#fff;padding:11px 20px;border-radius:30px;font-size:13px;box-shadow:var(--shadow);opacity:0;pointer-events:none;transition:.25s;z-index:99;}
+  .toast.show{opacity:1;bottom:34px;}
+  .inline-2{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+  @media(max-width:760px){.inline-2{grid-template-columns:1fr;} .main{padding:18px;} .sidebar{display:none;}}
+  .mobilebar{display:none;}
+  @media(max-width:760px){.mobilebar{display:flex;gap:6px;overflow-x:auto;padding:10px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5;}}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar">
+    <div class="brandmark">
+      <div class="dot">A</div>
+      <div><b>ANA couture</b><small>Prompt Studio</small></div>
+    </div>
+    <nav class="nav" id="nav">
+      <button data-sec="generate" class="active"><span class="ic">✦</span> Generate</button>
+      <button data-sec="brand"><span class="ic">⚙</span> Brand Settings</button>
+      <button data-sec="product"><span class="ic">👗</span> Product Builder</button>
+      <button data-sec="copybank"><span class="ic">✎</span> Copy Bank</button>
+      <button data-sec="history"><span class="ic">🕑</span> History</button>
+      <button data-sec="data"><span class="ic">⤓</span> Export / Import</button>
+      <button data-sec="guide"><span class="ic">?</span> Usage Guide</button>
+    </nav>
+  </aside>
+
+  <main class="main">
+    <!-- mobile nav -->
+    <div class="mobilebar" id="mobilebar"></div>
+
+    <!-- ============ HEADER ============ -->
+    <header class="topbar">
+      <div>
+        <h1>ANA <span class="script" style="color:var(--bold-pink)">Prompt</span> Generator</h1>
+        <div class="sub">Create branded AI prompts for posts, carousels, reels &amp; ads</div>
+        <div class="badges">
+          <div class="swatch" style="background:#106147" title="Deep Green"></div>
+          <div class="swatch" style="background:#f0cce1" title="Soft Pink"></div>
+          <div class="swatch" style="background:#d34f9b" title="Bold Pink"></div>
+          <div class="swatch" style="background:#7fcaab" title="Mint"></div>
+          <div class="swatch" style="background:#e0e8c5" title="Cream"></div>
+          <div class="swatch" style="background:#fee88e" title="Pale Yellow"></div>
+        </div>
+      </div>
+      <div class="note-chip">🏷️ Logo should be added manually after design generation</div>
+    </header>
+
+    <!-- ====================================================== -->
+    <!-- ============ GENERATE SECTION ============ -->
+    <!-- ====================================================== -->
+    <section id="sec-generate">
+
+      <!-- Content Type -->
+      <div class="card">
+        <h2>① Content Type</h2>
+        <div class="desc">Choose what you're creating. Relevant options appear below.</div>
+        <div class="chips" id="contentTypes"></div>
+      </div>
+
+      <!-- Active product selector -->
+      <div class="card">
+        <h2>② Active Product</h2>
+        <div class="desc">Prompts are built around the selected product preset. Manage these in Product Builder.</div>
+        <div class="inline-2">
+          <div class="field">
+            <label class="f">Selected product</label>
+            <select id="activeProduct"></select>
+          </div>
+          <div class="field" style="display:flex;align-items:flex-end;">
+            <button class="btn btn-ghost" onclick="go('product')">Edit / Add Products →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Visual Theme -->
+      <div class="card">
+        <h2>③ Visual Theme</h2>
+        <div class="desc">Sets palette &amp; mood of the generated design.</div>
+        <div class="theme-cards" id="themeCards"></div>
+      </div>
+
+      <!-- Layout System -->
+      <div class="card">
+        <h2>④ Layout System</h2>
+        <div class="desc">How the composition is arranged.</div>
+        <div class="chips" id="layouts"></div>
+      </div>
+
+      <!-- Conditional: Carousel -->
+      <div class="card section-hidden" id="block-carousel">
+        <h2>Carousel Builder</h2>
+        <div class="inline-2">
+          <div class="field">
+            <label class="f">Number of slides</label>
+            <select id="carSlides"><option>3</option><option>4</option><option>5</option><option selected>6</option><option>7</option><option>8</option></select>
+          </div>
+          <div class="field">
+            <label class="f">Carousel type</label>
+            <select id="carType">
+              <option value="A">A — Product Applications</option>
+              <option value="B">B — Feature-led</option>
+              <option value="C">C — Styling Moods</option>
+              <option value="D">D — Direct Sales</option>
+              <option value="E">E — Product Breakdown</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row"><button class="btn btn-ghost btn-sm" onclick="loadCarouselDefault()">↺ Load default structure</button></div>
+        <div class="divider"></div>
+        <label class="f">Slide planner</label>
+        <div id="slidePlanner"></div>
+      </div>
+
+      <!-- Conditional: Reel -->
+      <div class="card section-hidden" id="block-reel">
+        <h2>Reel Builder</h2>
+        <div class="grid grid-3">
+          <div class="field"><label class="f">Reel duration</label>
+            <select id="reelDur"><option>6s</option><option>9s</option><option selected>12s</option><option>15s</option></select></div>
+          <div class="field"><label class="f">Number of scenes</label>
+            <select id="reelScenes"><option>3</option><option selected>4</option><option>5</option></select></div>
+          <div class="field"><label class="f">Motion style</label>
+            <select id="reelMotion">
+              <option>soft walking</option><option>fabric movement</option><option>camera push-in</option>
+              <option>detail zoom</option><option>quick cuts</option><option>model turn</option><option>website selling reel</option>
+            </select></div>
+        </div>
+        <div class="btn-row"><button class="btn btn-ghost btn-sm" onclick="buildSceneRows()">↺ Rebuild scene rows</button></div>
+        <div class="divider"></div>
+        <label class="f">Scenes (on-screen text per scene)</label>
+        <div id="scenePlanner"></div>
+        <div class="field" style="margin-top:10px"><label class="f">Final CTA screen text</label>
+          <input type="text" id="reelCTA" value="Order Now · ana-couture.com" /></div>
+      </div>
+
+      <!-- Conditional: Grid Row -->
+      <div class="card section-hidden" id="block-grid">
+        <h2>3-Post Grid Row Builder</h2>
+        <div class="inline-2">
+          <div class="field"><label class="f">Row theme name</label><input type="text" id="rowTheme" value="The Flow Edit" /></div>
+          <div class="field"><label class="f">Shared CTA system</label><input type="text" id="rowCTA" value="Order Now" /></div>
+        </div>
+        <div class="grid grid-3" style="margin-top:6px">
+          <div class="field"><label class="f">Post 1 focus</label><input type="text" id="p1focus" value="Movement" /></div>
+          <div class="field"><label class="f">Post 2 focus</label><input type="text" id="p2focus" value="Styling" /></div>
+          <div class="field"><label class="f">Post 3 focus</label><input type="text" id="p3focus" value="Direct Sale" /></div>
+        </div>
+        <div class="grid grid-3">
+          <div class="field"><label class="f">Post 1 headline</label><input type="text" id="p1head" value="made to move" /></div>
+          <div class="field"><label class="f">Post 2 headline</label><input type="text" id="p2head" value="styled your way" /></div>
+          <div class="field"><label class="f">Post 3 headline</label><input type="text" id="p3head" value="order now" /></div>
+        </div>
+        <div class="inline-2">
+          <div class="field"><label class="f">Shared background system</label><input type="text" id="rowBg" value="off-white seamless with soft cream gradient" /></div>
+          <div class="field"><label class="f">Shared shape / typography system</label><input type="text" id="rowShape" value="rounded panels, Poppins headlines, one script accent word" /></div>
+        </div>
+      </div>
+
+      <!-- Copy overlay -->
+      <div class="card">
+        <h2>⑤ Copy Overlay</h2>
+        <div class="desc">Headline &amp; CTA placed on the design. Pull from Copy Bank or type your own.</div>
+        <div class="grid grid-3">
+          <div class="field"><label class="f">Headline</label>
+            <input type="text" id="ovHeadline" list="dl-headline" value="the flow edit" /></div>
+          <div class="field"><label class="f">Subheadline</label>
+            <input type="text" id="ovSub" list="dl-sub" value="a modest set styled with ease" /></div>
+          <div class="field"><label class="f">CTA</label>
+            <input type="text" id="ovCTA" list="dl-cta" value="Order Now" /></div>
+        </div>
+        <datalist id="dl-headline"></datalist>
+        <datalist id="dl-sub"></datalist>
+        <datalist id="dl-cta"></datalist>
+      </div>
+
+      <!-- Quality system -->
+      <div class="card">
+        <h2>⑥ Prompt Quality System</h2>
+        <div class="desc">Toggle the rules baked into every prompt.</div>
+        <div class="grid grid-3" id="qualityGrid"></div>
+      </div>
+
+      <!-- Generate -->
+      <div class="card" style="background:linear-gradient(135deg,#10614710,#7fcaab18);border-color:var(--mint)">
+        <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:14px">
+          <div><h2 style="margin:0">⑦ Generate Prompts</h2><div class="muted">Builds all output tabs from your selections.</div></div>
+          <button class="btn btn-primary" style="padding:14px 30px;font-size:15px" onclick="generate()">✦ Generate Prompts</button>
+        </div>
+      </div>
+
+      <!-- Output -->
+      <div class="card" id="outputCard">
+        <h2>Output</h2>
+        <div class="tabs" id="outTabs"></div>
+        <div class="output-box" id="outputBox">Press <b>Generate Prompts</b> to build your branded prompt set.</div>
+        <div class="output-actions">
+          <button class="btn btn-primary btn-sm" onclick="copyOutput()">📋 Copy</button>
+          <button class="btn btn-ghost btn-sm" onclick="generate()">↻ Regenerate</button>
+          <button class="btn btn-pink btn-sm" onclick="saveHistory()">★ Save to History</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================== -->
+    <!-- ============ BRAND SETTINGS ============ -->
+    <!-- ====================================================== -->
+    <section id="sec-brand" class="section-hidden">
+      <div class="card">
+        <h2>Brand Settings</h2>
+        <div class="desc">Saved to your browser. These rules feed every generated prompt.</div>
+        <div class="grid grid-2">
+          <div class="field"><label class="f">Brand name</label><input type="text" id="b_name" /></div>
+          <div class="field"><label class="f">Website</label><input type="text" id="b_site" /></div>
+          <div class="field"><label class="f">Default CTA text</label><input type="text" id="b_cta" /></div>
+          <div class="field"><label class="f">Logo placement note</label><input type="text" id="b_logo" /></div>
+          <div class="field"><label class="f">Color theme selection</label>
+            <select id="b_theme"></select></div>
+          <div class="field"><label class="f">Tone of voice</label><input type="text" id="b_tone" /></div>
+        </div>
+        <div class="field"><label class="f">Brand Master Prompt</label><textarea id="b_master" rows="5"></textarea></div>
+        <div class="field"><label class="f">Product Accuracy Rule</label><textarea id="b_accuracy" rows="4"></textarea></div>
+        <div class="field"><label class="f">Model Rule</label><textarea id="b_model" rows="4"></textarea></div>
+        <div class="field"><label class="f">Negative Prompt Rules</label><textarea id="b_negative" rows="4"></textarea></div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="saveBrand()">💾 Save Brand Settings</button>
+          <button class="btn btn-ghost" onclick="resetBrand()">↺ Restore ANA defaults</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================== -->
+    <!-- ============ PRODUCT BUILDER ============ -->
+    <!-- ====================================================== -->
+    <section id="sec-product" class="section-hidden">
+      <div class="card">
+        <h2>Product Builder</h2>
+        <div class="desc">Create reusable product presets for prompt generation.</div>
+        <div class="grid grid-2">
+          <div class="field"><label class="f">Product name</label><input type="text" id="p_name" /></div>
+          <div class="field"><label class="f">Category</label>
+            <select id="p_cat"><option>set</option><option>shirt</option><option>skirt</option><option>jacket</option><option>top</option><option>dress</option><option>pants</option><option>scarf</option></select></div>
+        </div>
+        <div class="field"><label class="f">Product description</label><textarea id="p_desc"></textarea></div>
+        <div class="grid grid-3">
+          <div class="field"><label class="f">Fabric / material</label><input type="text" id="p_fabric" /></div>
+          <div class="field"><label class="f">Main color</label><input type="text" id="p_color" /></div>
+          <div class="field"><label class="f">Print / pattern</label><input type="text" id="p_print" /></div>
+          <div class="field"><label class="f">Fit</label><input type="text" id="p_fit" /></div>
+          <div class="field"><label class="f">Size / measurements</label><input type="text" id="p_size" /></div>
+          <div class="field"><label class="f">Price</label><input type="text" id="p_price" /></div>
+        </div>
+        <div class="field"><label class="f">Key design details</label><textarea id="p_details"></textarea></div>
+        <div class="field"><label class="f">Product URL</label><input type="url" id="p_url" /></div>
+        <div class="inline-2">
+          <div class="field"><label class="f">Product-specific accuracy notes</label><textarea id="p_accnotes"></textarea></div>
+          <div class="field"><label class="f">Styling notes</label><textarea id="p_style"></textarea></div>
+        </div>
+        <div class="inline-2">
+          <div class="field"><label class="f">Number of reference images (1–6)</label>
+            <select id="p_imgcount"><option>1</option><option>2</option><option>3</option><option>4</option><option>5</option><option>6</option></select></div>
+          <div class="field"><label class="f">Reference naming</label>
+            <input type="text" id="p_imgnames" disabled value="Image A · Image B · Image C · Image D · Image E · Image F" /></div>
+        </div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="saveProduct()">💾 Save Product Preset</button>
+          <button class="btn btn-ghost" onclick="clearProductForm()">+ New / Clear form</button>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Product Presets</h2>
+        <div id="productList"></div>
+      </div>
+    </section>
+
+    <!-- ====================================================== -->
+    <!-- ============ COPY BANK ============ -->
+    <!-- ====================================================== -->
+    <section id="sec-copybank" class="section-hidden">
+      <div class="card">
+        <h2>Copy Bank</h2>
+        <div class="desc">Editable banks. One item per line. Feeds the Copy Overlay dropdowns.</div>
+        <div class="grid grid-2">
+          <div class="field"><label class="f">Headline bank</label><textarea id="bank_head" rows="10"></textarea></div>
+          <div class="field"><label class="f">Subheadline bank</label><textarea id="bank_sub" rows="10"></textarea></div>
+          <div class="field"><label class="f">CTA bank</label><textarea id="bank_cta" rows="6"></textarea></div>
+          <div class="field"><label class="f">Hashtag bank</label><textarea id="bank_tag" rows="6"></textarea></div>
+        </div>
+        <div class="btn-row"><button class="btn btn-primary" onclick="saveBanks()">💾 Save Copy Bank</button>
+          <button class="btn btn-ghost" onclick="resetBanks()">↺ Restore defaults</button></div>
+      </div>
+    </section>
+
+    <!-- ====================================================== -->
+    <!-- ============ HISTORY ============ -->
+    <!-- ====================================================== -->
+    <section id="sec-history" class="section-hidden">
+      <div class="card">
+        <h2>Prompt History</h2>
+        <div class="desc">Saved prompt sets (stored locally).</div>
+        <div id="historyList"></div>
+      </div>
+    </section>
+
+    <!-- ====================================================== -->
+    <!-- ============ DATA ============ -->
+    <!-- ====================================================== -->
+    <section id="sec-data" class="section-hidden">
+      <div class="card">
+        <h2>Export / Import</h2>
+        <div class="desc">Back up or move all your presets, products, banks &amp; history.</div>
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="exportData()">⤓ Export all as JSON</button>
+          <label class="btn btn-ghost" style="cursor:pointer">⤒ Import JSON<input type="file" id="importFile" accept="application/json" style="display:none" onchange="importData(event)"></label>
+          <button class="btn btn-pink" onclick="clearData()">🗑 Clear local data</button>
+        </div>
+        <div class="divider"></div>
+        <div class="help">Tip: Export regularly to keep a backup. Importing replaces current local data.</div>
+      </div>
+    </section>
+
+    <!-- ====================================================== -->
+    <!-- ============ GUIDE ============ -->
+    <!-- ====================================================== -->
+    <section id="sec-guide" class="section-hidden">
+      <div class="card">
+        <h2>Usage Guide</h2>
+        <div class="help" style="line-height:1.8">
+          <b>1.</b> Open <b>Product Builder</b> → add your garment (or use the default ANA Modest Dot Set) → <b>Save Preset</b>.<br>
+          <b>2.</b> Go to <b>Generate</b> → pick a <b>Content Type</b> (post, carousel, reel, grid row, ad…).<br>
+          <b>3.</b> Select the <b>Active Product</b>, a <b>Visual Theme</b>, and a <b>Layout</b>.<br>
+          <b>4.</b> For carousels / reels / grid rows, fill the builder that appears.<br>
+          <b>5.</b> Set your <b>Copy Overlay</b> (headline, subheadline, CTA) and toggle the <b>Quality</b> rules.<br>
+          <b>6.</b> Press <b>✦ Generate Prompts</b>. Switch output tabs (Full, Short, Negative, Slides, Storyboard, Captions, Hashtags, Client Instructions).<br>
+          <b>7.</b> <b>Copy</b> the prompt into your AI image/video tool. Add the ANA logo manually afterward.<br>
+          <b>8.</b> <b>Save to History</b> to reuse later. Use <b>Export</b> to back everything up.<br><br>
+          <b>Remember:</b> This dashboard creates <b>prompts</b>, not images. It never adds a logo — leave logo space and place it manually.
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   ANA PROMPT GENERATOR — single-file app
+   ============================================================ */
+const LS = {
+  brand:'ana_brand', products:'ana_products', banks:'ana_banks',
+  history:'ana_history', ui:'ana_ui'
+};
+const $ = id => document.getElementById(id);
+const read = (k,def) => { try{const v=localStorage.getItem(k);return v?JSON.parse(v):def;}catch(e){return def;} };
+const write = (k,v) => localStorage.setItem(k,JSON.stringify(v));
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),1900);}
+
+/* ---------- DEFAULTS ---------- */
+const DEFAULT_BRAND = {
+  name:'ANA couture', site:'ana-couture.com', cta:'Order Now',
+  logo:'Do not include the logo. Leave clean space for logo placement (top-left or bottom-center).',
+  theme:'Theme 01 — ANA Soft Editorial', tone:'soft, confident, feminine, modest, premium, minimal',
+  master:'Create a premium final fashion social media design for ANA couture, suitable for Instagram posting and paid advertising. The style should be clean, modern, feminine, modest, and editorial-commercial. Use ANA brand-inspired colors: deep green #106147, soft pink #f0cce1, bold pink #d34f9b, mint #7fcaab, cream #e0e8c5, and pale yellow #fee88e. Typography should feel like Poppins for the main text, with an optional elegant handwritten accent style for one small word only. Keep the layout polished, premium, minimal, and ready to publish. Do not include the logo. Leave clean space for logo placement. Use concise text overlays and a clear CTA.',
+  accuracy:'Preserve the exact product design with full accuracy. Keep the original garment color, print, silhouette, fit, length, sleeves, collar, buttons, skirt shape, waistband, fabric texture, and construction details unchanged. Do not redesign the outfit. Do not change the print scale or spacing. Do not add pockets, embroidery, extra accessories as part of the garment, or new design elements. The product must remain the hero.',
+  model:'Do not copy the original model identity. Generate a different realistic Egyptian/Arab hijabi model for each output. She should look elegant, modest, premium, and natural. Change the face, expression, and presence from one design to the next, while keeping the styling appropriate for ANA couture. The model should not distract from the product.',
+  negative:'Do not create a raw unstyled product image. Do not produce a draft layout. Do not add a logo. Do not clutter the composition. Do not distort the product. Do not change the garment construction. Do not overuse decorative elements. Do not create a loud or cheap-looking ad. Keep the final result premium, polished, clear, and ready to publish.'
+};
+
+const DEFAULT_PRODUCTS = [{
+  id:'ana-dot-set', name:'ANA Modest Dot Set', cat:'set',
+  desc:'White modest polka dot matching set with button-up jacket/top, waist tie detail, and long flowing skirt.',
+  fabric:'soft flowing lightweight fabric', color:'White', print:'White base with black polka dots',
+  fit:'relaxed modest silhouette', details:'button-up top, collar, waist tie, long modest skirt, soft movement, clean feminine silhouette',
+  size:'S / M / L', price:'990 EGP', url:'ana-couture.com',
+  accnotes:'Keep polka dot scale and spacing exactly as the reference. Keep waist tie and button placement.',
+  style:'Style modestly with neutral hijab; elegant, premium, everyday-to-evening.',
+  imgcount:'3'
+}];
+
+const DEFAULT_BANKS = {
+  head:['the flow edit','dots, made easy','one set, many moods','modest movement','styled your way','easy elegance','soft structure','polished ease','made to move','your everyday set'],
+  sub:['soft movement with effortless polish','a modest set styled with ease','timeless print, easy silhouette','one look, multiple styling moods','everyday elegance in one set','movement, structure, and comfort in one look'],
+  cta:['Order Now','Order Online','DM to Order','Shop the Look','Available Online'],
+  tag:['#ANACouture','#ANA','#ModestFashion','#HijabiStyle','#EgyptianFashion','#SummerOutfit','#ModestWear','#OOTD','#CairoFashion']
+};
+
+const CONTENT_TYPES = ['Single Instagram Post','3-Post Grid Row','Carousel','Reel','Story','Paid Ad','Product Detail Banner','Website Product Visual'];
+
+const THEMES = [
+  {id:'Theme 01 — ANA Soft Editorial', best:'Best for modest feminine products.', mood:'soft, premium, feminine, clean', cols:['#fbfaf7','#e0e8c5','#f0cce1','#7fcaab','#106147'], palette:'off-white, cream, soft pink, pale green, deep green'},
+  {id:'Theme 02 — Warm Editorial Clay', best:'Inspired by fashion retail campaigns.', mood:'editorial, warm, fashion-forward', cols:['#e9dcc9','#c79a7a','#f4ede2','#6e4a32','#106147'], palette:'warm beige, clay, cream, brown, deep green CTA'},
+  {id:'Theme 03 — Clean Studio Commerce', best:'Best for direct sales.', mood:'clear, e-commerce, conversion-focused', cols:['#f2f3f0','#ffffff','#2b2b2b','#106147','#d34f9b'], palette:'light gray, white, charcoal, deep green, bold pink CTA'},
+  {id:'Theme 04 — Bold Pink Drop', best:'Best for new arrivals & high-energy posts.', mood:'fresh, young, launch-focused', cols:['#d34f9b','#f0cce1','#ffffff','#106147','#fee88e'], palette:'bold pink, soft pink, white, deep green'},
+  {id:'Theme 05 — Minimal Luxury Green', best:'Best for premium pieces.', mood:'elegant, premium, calm', cols:['#106147','#e0e8c5','#fbfaf7','#f0cce1','#0d503b'], palette:'deep green, cream, off-white, soft pink accent'}
+];
+
+const LAYOUTS = ['Hero image with small text block','Split image + text','Full image overlay text','Editorial crop layout','Product card style','Carousel application style','Detail crop style','CTA final slide','Grid row coordinated layout'];
+
+const QUALITY = ['Preserve exact garment details','Change model identity','Egyptian/Arab hijabi model','Leave logo space','Use ANA brand colors','Paid-ad ready','Minimal text','Include CTA','Include website','Keep grid consistency','Avoid clutter','No logo in generated design'];
+
+const CAROUSEL_DEFAULTS = {
+  A:[['Product cover','Hero shot of the set','show the full product'],['Application 1','Styled look one','first way to wear'],['Application 2','Styled look two','second way to wear'],['Application 3','Styled look three','third way to wear'],['Detail','Close-up of key detail','build desire'],['CTA','Order Now','drive the sale']],
+  B:[['Product hero','The set, full view','introduce the piece'],['Silhouette','Clean shape','show the cut'],['Movement','Fabric in motion','show flow'],['Fabric / print','Texture close-up','show quality'],['Styling','How to wear it','inspire'],['CTA','Shop now','drive the sale']],
+  C:[['One piece, many moods','Versatility intro','set the theme'],['Soft day out','Daytime styling','mood one'],['Polished casual','Smart casual styling','mood two'],['Dinner ready','Evening styling','mood three'],['Why it works','Feature recap','reassure'],['Shop the look','Order Now','drive the sale']],
+  D:[['New in','Product reveal','attention'],['The details','Why it stands out','features'],['Price & value','990 EGP','justify'],['How to order','DM / website','reduce friction'],['Limited','Scarcity nudge','urgency'],['Order Now','Final CTA','convert']],
+  E:[['The full set','Complete look','overview'],['The top','Top breakdown','part one'],['The skirt','Skirt breakdown','part two'],['The details','Buttons, waist tie','part three'],['Fabric & fit','Comfort & quality','reassure'],['Get yours','Final CTA','convert']]
+};
+
+/* ---------- STATE ---------- */
+let state = read(LS.ui, {ct:'Single Instagram Post', theme:THEMES[0].id, layout:LAYOUTS[0], quality:{}, outTab:'Full Prompt'});
+QUALITY.forEach(q=>{ if(state.quality[q]===undefined) state.quality[q] = !['Paid-ad ready','Keep grid consistency'].includes(q); });
+let lastOutputs = null;
+
+function brand(){return read(LS.brand, DEFAULT_BRAND);}
+function products(){return read(LS.products, DEFAULT_PRODUCTS);}
+function banks(){return read(LS.banks, DEFAULT_BANKS);}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+function go(sec){
+  document.querySelectorAll('section[id^="sec-"]').forEach(s=>s.classList.add('section-hidden'));
+  $('sec-'+sec).classList.remove('section-hidden');
+  document.querySelectorAll('#nav button,[data-mob]').forEach(b=>b.classList.toggle('active', b.dataset.sec===sec));
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>go(b.dataset.sec));
+// mobile bar
+const mb=$('mobilebar');
+[['generate','Generate'],['brand','Brand'],['product','Products'],['copybank','Copy'],['history','History'],['data','Data'],['guide','Guide']].forEach(([s,l])=>{
+  const x=document.createElement('button');x.className='tab';x.textContent=l;x.dataset.mob=1;x.dataset.sec=s;x.onclick=()=>go(s);mb.appendChild(x);
+});
+
+/* ============================================================
+   RENDER: GENERATE CONTROLS
+   ============================================================ */
+function renderContentTypes(){
+  const c=$('contentTypes');c.innerHTML='';
+  CONTENT_TYPES.forEach(t=>{
+    const d=document.createElement('div');d.className='chip'+(state.ct===t?' on':'');d.textContent=t;
+    d.onclick=()=>{state.ct=t;persistUI();renderContentTypes();updateConditionalBlocks();};
+    c.appendChild(d);
+  });
+}
+function renderThemes(){
+  const w=$('themeCards');w.innerHTML='';
+  THEMES.forEach(t=>{
+    const card=document.createElement('div');card.className='theme-card'+(state.theme===t.id?' on':'');
+    card.innerHTML=`<h4>${t.id}</h4><small>${t.best}</small>
+      <div class="swatches">${t.cols.map(c=>`<div class="sw" style="background:${c}"></div>`).join('')}</div>
+      <small>${t.palette}</small><span class="mood">${t.mood}</span>`;
+    card.onclick=()=>{state.theme=t.id;persistUI();renderThemes();};
+    w.appendChild(card);
+  });
+}
+function renderLayouts(){
+  const w=$('layouts');w.innerHTML='';
+  LAYOUTS.forEach(l=>{
+    const d=document.createElement('div');d.className='chip'+(state.layout===l?' on':'');d.textContent=l;
+    d.onclick=()=>{state.layout=l;persistUI();renderLayouts();};
+    w.appendChild(d);
+  });
+}
+function renderQuality(){
+  const w=$('qualityGrid');w.innerHTML='';
+  QUALITY.forEach(q=>{
+    const lab=document.createElement('label');lab.className='qcheck';
+    lab.innerHTML=`<input type="checkbox" ${state.quality[q]?'checked':''}/> ${q}`;
+    lab.querySelector('input').onchange=e=>{state.quality[q]=e.target.checked;persistUI();};
+    w.appendChild(lab);
+  });
+}
+function renderActiveProduct(){
+  const sel=$('activeProduct');const ps=products();sel.innerHTML='';
+  ps.forEach(p=>{const o=document.createElement('option');o.value=p.id;o.textContent=p.name+' ('+p.cat+')';sel.appendChild(o);});
+  if(state.activeProduct && ps.find(p=>p.id===state.activeProduct)) sel.value=state.activeProduct;
+  else state.activeProduct = ps[0]?.id;
+  sel.onchange=()=>{state.activeProduct=sel.value;persistUI();};
+}
+function persistUI(){write(LS.ui,state);}
+
+/* conditional builder blocks */
+function updateConditionalBlocks(){
+  $('block-carousel').classList.toggle('section-hidden', state.ct!=='Carousel');
+  $('block-reel').classList.toggle('section-hidden', state.ct!=='Reel');
+  $('block-grid').classList.toggle('section-hidden', state.ct!=='3-Post Grid Row');
+  if(state.ct==='Carousel' && !$('slidePlanner').children.length) loadCarouselDefault();
+  if(state.ct==='Reel' && !$('scenePlanner').children.length) buildSceneRows();
+}
+
+/* ---------- Carousel planner ---------- */
+function loadCarouselDefault(){
+  const type=$('carType').value;const n=parseInt($('carSlides').value);
+  const base=CAROUSEL_DEFAULTS[type]||CAROUSEL_DEFAULTS.A;
+  const planner=$('slidePlanner');planner.innerHTML='';
+  const imgs=['Image A','Image B','Image C','Image D','Image E','Image F'];
+  for(let i=0;i<n;i++){
+    const d=base[i]||['Slide '+(i+1),'','content'];
+    planner.appendChild(slideRow(i+1,d[0],d[1],d[2],imgs[i%6], i===n-1));
+  }
+}
+function slideRow(num,head,sub,purpose,img,cta){
+  const row=document.createElement('div');row.className='row-edit';row.dataset.slide=1;
+  row.innerHTML=`<div class="num">${num}</div>
+    <input type="text" data-k="head" placeholder="Headline" value="${esc(head)}">
+    <input type="text" data-k="sub" placeholder="Subheadline" value="${esc(sub)}">
+    <input type="text" data-k="purpose" placeholder="Purpose" value="${esc(purpose)}">
+    <label class="qcheck" style="padding:6px 8px"><input type="checkbox" data-k="cta" ${cta?'checked':''}> CTA</label>`;
+  row.dataset.img=img;
+  return row;
+}
+$('carType').addEventListener('change',loadCarouselDefault);
+$('carSlides').addEventListener('change',loadCarouselDefault);
+
+/* ---------- Reel planner ---------- */
+function buildSceneRows(){
+  const n=parseInt($('reelScenes').value);const dur=$('reelDur').value;
+  const per=(parseInt(dur)/n).toFixed(1);
+  const planner=$('scenePlanner');planner.innerHTML='';
+  const defaults=['the flow edit','made to move','styled your way','one set, many moods','order now'];
+  const imgs=['Image A','Image B','Image C','Image D','Image E','Image F'];
+  for(let i=0;i<n;i++){
+    const row=document.createElement('div');row.className='row-edit';row.style.gridTemplateColumns='30px 80px 1fr 1fr';
+    row.innerHTML=`<div class="num">${i+1}</div>
+      <input type="text" data-k="dur" value="${per}s" style="text-align:center">
+      <input type="text" data-k="text" placeholder="On-screen text" value="${esc(defaults[i]||'')}">
+      <input type="text" data-k="img" value="${imgs[i%6]}">`;
+    planner.appendChild(row);
+  }
+}
+$('reelScenes').addEventListener('change',buildSceneRows);
+$('reelDur').addEventListener('change',buildSceneRows);
+
+function esc(s){return (s||'').replace(/"/g,'&quot;');}
+
+/* ============================================================
+   PROMPT GENERATION
+   ============================================================ */
+const OUT_TABS = ['Full Prompt','Short Prompt','Negative Prompt','Slide-by-slide Prompts','Reel Storyboard','Caption Ideas','Hashtags','Client Instructions'];
+
+function activeProductObj(){return products().find(p=>p.id===state.activeProduct)||products()[0];}
+function themeObj(){return THEMES.find(t=>t.id===state.theme)||THEMES[0];}
+function qOn(q){return !!state.quality[q];}
+function activeQualityLines(){return QUALITY.filter(q=>state.quality[q]);}
+
+function blockProduct(p){
+  return `PRODUCT: ${p.name} — ${p.cat}\n`+
+  `Description: ${p.desc}\n`+
+  `Fabric: ${p.fabric} | Color: ${p.color} | Print/Pattern: ${p.print} | Fit: ${p.fit}\n`+
+  `Key details: ${p.details}\n`+
+  (p.price?`Price: ${p.price}\n`:'')+
+  `Reference images: ${refImages(p)} (preserve product exactly as shown).`+
+  (p.accnotes?`\nProduct accuracy notes: ${p.accnotes}`:'');
+}
+function refImages(p){
+  const n=parseInt(p.imgcount||'1');const names=['Image A','Image B','Image C','Image D','Image E','Image F'];
+  return names.slice(0,n).join(', ');
+}
+
+function generate(){
+  const b=brand(), p=activeProductObj(), t=themeObj();
+  const head=$('ovHeadline').value.trim(), sub=$('ovSub').value.trim(), cta=$('ovCTA').value.trim()||b.cta;
+  const q=activeQualityLines();
+
+  /* ---- FULL PROMPT ---- */
+  let full =
+`【BRAND MASTER】\n${b.master}\n\n`+
+`【CONTENT TYPE】\nFormat: ${state.ct}. Build a final, ready-to-publish ${state.ct.toLowerCase()} for ${b.name}.\n\n`+
+`【PRODUCT ACCURACY】\n${b.accuracy}\n\n`+
+`【${'PRODUCT'}】\n${blockProduct(p)}\n\n`+
+`【MODEL CONTROL】\n${b.model}\n\n`+
+`【VISUAL THEME】\n${t.id}\nPalette: ${t.palette}. Mood: ${t.mood}.\n\n`+
+`【LAYOUT SYSTEM】\nLayout: ${state.layout}. Keep premium spacing, clean margins, balanced composition.\n\n`+
+`【COPY OVERLAY】\nHeadline: "${head}"`+(sub?`\nSubheadline: "${sub}"`:'')+`\nUse Poppins-style type for main text; one small word may use an elegant handwritten accent.\n\n`+
+`【CTA】\nCall to action: "${cta}"`+(qOn('Include website')?`  |  Website: ${b.site}`:'')+`\n\n`;
+
+  if(state.ct==='Carousel') full += `【CAROUSEL STRUCTURE】\n${carouselSummary()}\n\n`;
+  if(state.ct==='Reel') full += `【REEL】\nDuration ${$('reelDur').value}, ${$('reelScenes').value} scenes, motion: ${$('reelMotion').value}. Final CTA screen: "${$('reelCTA').value}".\n\n`;
+  if(state.ct==='3-Post Grid Row') full += `【GRID SYSTEM】\n${gridSummary()}\n\n`;
+
+  full += `【QUALITY RULES】\n- ${q.join('\n- ')}\n\n`+
+`【NEGATIVE PROMPT】\n${b.negative}`;
+
+  /* ---- SHORT PROMPT ---- */
+  let short = `Premium ${state.ct.toLowerCase()} for ${b.name} (modest Egyptian/Arab hijabi fashion). `+
+  `Product: ${p.name} — ${p.print}, ${p.fit}; preserve product exactly (${refImages(p)}). `+
+  `Theme: ${t.id} (${t.palette}). Layout: ${state.layout}. `+
+  `New realistic hijabi model. Headline "${head}". CTA "${cta}". `+
+  `ANA brand colors, Poppins type, leave logo space, no logo, clean & editorial, ready to publish.`;
+
+  /* ---- NEGATIVE ---- */
+  let neg = b.negative;
+
+  /* ---- SLIDES ---- */
+  let slides='';
+  if(state.ct==='Carousel'){ slides=buildSlidePrompts(b,p,t); }
+  else if(state.ct==='3-Post Grid Row'){ slides=buildGridPrompts(b,p,t); }
+  else { slides='Slide-by-slide prompts apply to Carousel or 3-Post Grid Row content types.\nSwitch content type and regenerate to populate this tab.'; }
+
+  /* ---- REEL STORYBOARD ---- */
+  let reel = (state.ct==='Reel') ? buildReel(b,p,t,cta) : 'Reel storyboard applies to the Reel content type.\nSelect "Reel" and regenerate.';
+
+  /* ---- CAPTIONS ---- */
+  let caps = buildCaptions(b,p,head,sub,cta);
+
+  /* ---- HASHTAGS ---- */
+  let tags = banks().tag.join(' ');
+
+  /* ---- CLIENT INSTRUCTIONS ---- */
+  let inst =
+`CLIENT INSTRUCTIONS — ${p.name}\n`+
+`1. Paste the chosen prompt (Full or Short) into your AI image/video tool.\n`+
+`2. Upload the product reference image(s): ${refImages(p)}.\n`+
+`3. Generate. The product must look exactly like the reference — same print, fit & details.\n`+
+`4. Pick the cleanest result with a new hijabi model and good logo space.\n`+
+`5. Add the ANA logo manually (${b.logo}).\n`+
+`6. Use the caption + hashtags from their tabs. CTA: ${cta} — ${b.site}.\n`+
+(state.ct==='Carousel'?`7. Generate each slide using the Slide-by-slide tab, in order.\n`:'')+
+(state.ct==='Reel'?`7. Edit the reel following the Reel Storyboard tab, scene by scene.\n`:'')+
+(state.ct==='3-Post Grid Row'?`7. Generate all 3 posts together so backgrounds & type stay consistent.\n`:'')+
+`Theme: ${t.id} | Layout: ${state.layout}`;
+
+  lastOutputs = {
+    'Full Prompt':full, 'Short Prompt':short, 'Negative Prompt':neg,
+    'Slide-by-slide Prompts':slides, 'Reel Storyboard':reel,
+    'Caption Ideas':caps, 'Hashtags':tags, 'Client Instructions':inst
+  };
+  renderOutTabs();
+  showTab(state.outTab||'Full Prompt');
+  toast('Prompts generated ✦');
+}
+
+function carouselSummary(){
+  const rows=[...$('slidePlanner').children];
+  return rows.map((r,i)=>{
+    const g=k=>r.querySelector(`[data-k="${k}"]`);
+    const cta=g('cta').checked?' [CTA]':'';
+    return `Slide ${i+1} (${r.dataset.img}): ${g('head').value} — ${g('sub').value} · purpose: ${g('purpose').value}${cta}`;
+  }).join('\n');
+}
+function buildSlidePrompts(b,p,t){
+  const rows=[...$('slidePlanner').children];
+  const out=[`CAROUSEL — ${rows.length} slides · Theme ${t.id}`,''];
+  rows.forEach((r,i)=>{
+    const g=k=>r.querySelector(`[data-k="${k}"]`);
+    const cta=g('cta').checked;
+    out.push(`── SLIDE ${i+1} (${r.dataset.img}) ──`);
+    out.push(`Create a ${state.layout.toLowerCase()} slide for ${b.name}. ${i===0?'Hero/cover of':'Featuring'} ${p.name} — preserve product exactly (${p.print}, ${p.fit}). New realistic Egyptian/Arab hijabi model. Palette: ${t.palette}, mood ${t.mood}.`);
+    out.push(`Overlay headline: "${g('head').value}"${g('sub').value?` | sub: "${g('sub').value}"`:''}. Purpose: ${g('purpose').value}.`);
+    if(cta) out.push(`Add CTA: "${$('ovCTA').value||b.cta}" — ${b.site}.`);
+    out.push(`Poppins type, ANA colors, leave logo space, no logo, premium & consistent across slides.`);
+    out.push('');
+  });
+  out.push('NEGATIVE: '+b.negative);
+  return out.join('\n');
+}
+
+function gridSummary(){
+  return `Row "${$('rowTheme').value}" — 3 connected posts.\n`+
+  `Shared background: ${$('rowBg').value}. Shared shape/type: ${$('rowShape').value}. Shared CTA: ${$('rowCTA').value}.\n`+
+  `Post 1 (${$('p1focus').value}): "${$('p1head').value}" | Post 2 (${$('p2focus').value}): "${$('p2head').value}" | Post 3 (${$('p3focus').value}): "${$('p3head').value}"`;
+}
+function buildGridPrompts(b,p,t){
+  const foc=[$('p1focus').value,$('p2focus').value,$('p3focus').value];
+  const hd=[$('p1head').value,$('p2head').value,$('p3head').value];
+  const out=[`3-POST GRID ROW — "${$('rowTheme').value}" · Theme ${t.id}`,
+    `Shared background: ${$('rowBg').value}`,
+    `Shared shape/type system: ${$('rowShape').value}`,
+    `Generate all three together so they read as one coordinated row.`,''];
+  for(let i=0;i<3;i++){
+    out.push(`── POST ${i+1} · ${foc[i]} ──`);
+    out.push(`Create a ${state.layout.toLowerCase()} post for ${b.name} featuring ${p.name} (preserve product exactly: ${p.print}, ${p.fit}). Focus: ${foc[i]}. New realistic Egyptian/Arab hijabi model. Palette: ${t.palette}, mood ${t.mood}. Use the SHARED background & type system above so all 3 posts match.`);
+    out.push(`Headline: "${hd[i]}". ${i===2?`CTA: "${$('rowCTA').value}" — ${b.site}.`:''}`);
+    out.push(`Poppins type, ANA colors, leave logo space, no logo, premium.`);
+    out.push('');
+  }
+  out.push('NEGATIVE: '+b.negative);
+  return out.join('\n');
+}
+
+function buildReel(b,p,t,cta){
+  const rows=[...$('scenePlanner').children];
+  const motion=$('reelMotion').value;
+  const vid=[`A. AI VIDEO GENERATION PROMPT`,
+    `Create a ${$('reelDur').value} premium fashion reel for ${b.name} featuring ${p.name}. Modest Egyptian/Arab hijabi model (new realistic identity). Preserve the product exactly (${p.print}, ${p.fit}, ${p.details}). Motion style: ${motion}. Theme ${t.id} — palette ${t.palette}, mood ${t.mood}. Soft natural lighting, editorial-commercial, vertical 9:16, smooth elegant motion, leave space for text overlays and logo. End on a clean CTA screen: "${$('reelCTA').value}". No logo baked in. Premium, polished, ready to publish.`,
+    ``,`B. EDITING STORYBOARD`,`Duration ${$('reelDur').value} · ${rows.length} scenes · motion ${motion}`,``];
+  rows.forEach((r,i)=>{
+    const g=k=>r.querySelector(`[data-k="${k}"]`);
+    vid.push(`Scene ${i+1} [${g('dur').value}] (${g('img').value}): ${motion}. On-screen text: "${g('text').value}".`);
+  });
+  vid.push(`Final CTA screen: "${$('reelCTA').value}" — ${b.site}.`);
+  vid.push(``,`NEGATIVE: ${b.negative}`);
+  return vid.join('\n');
+}
+
+function buildCaptions(b,p,head,sub,cta){
+  const price=p.price?` (${p.price})`:'';
+  return [
+`✶ Caption A — soft\n${cap(head)} ✨\n${sub||'A modest set styled with ease.'} ${p.name}${price}.\n${cta} — ${b.site}`,
+``,
+`✶ Caption B — direct\nMeet the ${p.name}. ${p.print}, ${p.fit}, made to move.\n${cta} now 🤍 ${b.site}`,
+``,
+`✶ Caption C — story\nOne set, many moods. From soft day out to dinner ready — the ${p.name} does it all.\n${cta} · DM to order.`
+  ].join('\n');
+}
+function cap(s){return s? s.charAt(0).toUpperCase()+s.slice(1):'';}
+
+/* ---------- OUTPUT TABS ---------- */
+function renderOutTabs(){
+  const w=$('outTabs');w.innerHTML='';
+  OUT_TABS.forEach(t=>{
+    const d=document.createElement('div');d.className='tab'+((state.outTab||'Full Prompt')===t?' on':'');d.textContent=t;
+    d.onclick=()=>showTab(t);
+    w.appendChild(d);
+  });
+}
+function showTab(t){
+  state.outTab=t;persistUI();renderOutTabs();
+  $('outputBox').textContent = lastOutputs? (lastOutputs[t]||'—') : 'Press Generate Prompts first.';
+}
+function copyOutput(){
+  const txt=$('outputBox').textContent;
+  navigator.clipboard.writeText(txt).then(()=>toast('Copied to clipboard 📋')).catch(()=>{
+    const ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove();toast('Copied 📋');
+  });
+}
+
+/* ============================================================
+   HISTORY
+   ============================================================ */
+function saveHistory(){
+  if(!lastOutputs){toast('Generate prompts first');return;}
+  const p=activeProductObj();
+  const h=read(LS.history,[]);
+  h.unshift({id:Date.now(),date:new Date().toLocaleString(),product:p.name,ct:state.ct,theme:state.theme,outputs:lastOutputs});
+  write(LS.history,h);renderHistory();toast('Saved to history ★');
+}
+function renderHistory(){
+  const h=read(LS.history,[]);const w=$('historyList');
+  if(!h.length){w.innerHTML='<div class="muted">No saved prompts yet.</div>';return;}
+  w.innerHTML='';
+  h.forEach(item=>{
+    const d=document.createElement('div');d.className='list-item';
+    d.innerHTML=`<div><div class="ttl">${item.product}<span class="pill">${item.ct}</span><span class="pill" style="background:var(--cream);color:#566312">${item.theme.split('—')[0].trim()}</span></div>
+      <div class="meta">${item.date}</div></div>
+      <div style="display:flex;gap:7px">
+        <button class="btn btn-ghost btn-sm">📋 Copy</button>
+        <button class="btn btn-pink btn-sm">🗑</button>
+      </div>`;
+    const [copyBtn,delBtn]=d.querySelectorAll('button');
+    copyBtn.onclick=()=>{navigator.clipboard.writeText(item.outputs['Full Prompt']||'');toast('Full prompt copied 📋');};
+    delBtn.onclick=()=>{const arr=read(LS.history,[]).filter(x=>x.id!==item.id);write(LS.history,arr);renderHistory();toast('Deleted');};
+    w.appendChild(d);
+  });
+}
+
+/* ============================================================
+   BRAND SETTINGS
+   ============================================================ */
+function loadBrandForm(){
+  const b=brand();
+  $('b_name').value=b.name;$('b_site').value=b.site;$('b_cta').value=b.cta;$('b_logo').value=b.logo;
+  $('b_tone').value=b.tone;$('b_master').value=b.master;$('b_accuracy').value=b.accuracy;$('b_model').value=b.model;$('b_negative').value=b.negative;
+  const sel=$('b_theme');sel.innerHTML='';THEMES.forEach(t=>{const o=document.createElement('option');o.value=t.id;o.textContent=t.id;sel.appendChild(o);});
+  sel.value=b.theme;
+}
+function saveBrand(){
+  const b={name:$('b_name').value,site:$('b_site').value,cta:$('b_cta').value,logo:$('b_logo').value,
+    theme:$('b_theme').value,tone:$('b_tone').value,master:$('b_master').value,accuracy:$('b_accuracy').value,
+    model:$('b_model').value,negative:$('b_negative').value};
+  write(LS.brand,b);toast('Brand settings saved 💾');
+}
+function resetBrand(){write(LS.brand,DEFAULT_BRAND);loadBrandForm();toast('ANA defaults restored');}
+
+/* ============================================================
+   PRODUCT BUILDER
+   ============================================================ */
+let editingId=null;
+function loadProductForm(p){
+  editingId=p?p.id:null;
+  $('p_name').value=p?.name||'';$('p_cat').value=p?.cat||'set';$('p_desc').value=p?.desc||'';
+  $('p_fabric').value=p?.fabric||'';$('p_color').value=p?.color||'';$('p_print').value=p?.print||'';
+  $('p_fit').value=p?.fit||'';$('p_size').value=p?.size||'';$('p_price').value=p?.price||'';
+  $('p_details').value=p?.details||'';$('p_url').value=p?.url||'';$('p_accnotes').value=p?.accnotes||'';
+  $('p_style').value=p?.style||'';$('p_imgcount').value=p?.imgcount||'1';
+}
+function clearProductForm(){loadProductForm(null);toast('Form cleared — add a new product');}
+function saveProduct(){
+  const name=$('p_name').value.trim();if(!name){toast('Product name required');return;}
+  const ps=products();
+  const obj={id:editingId||('p'+Date.now()),name,cat:$('p_cat').value,desc:$('p_desc').value,
+    fabric:$('p_fabric').value,color:$('p_color').value,print:$('p_print').value,fit:$('p_fit').value,
+    size:$('p_size').value,price:$('p_price').value,details:$('p_details').value,url:$('p_url').value,
+    accnotes:$('p_accnotes').value,style:$('p_style').value,imgcount:$('p_imgcount').value};
+  const idx=ps.findIndex(p=>p.id===obj.id);
+  if(idx>=0)ps[idx]=obj;else ps.push(obj);
+  write(LS.products,ps);editingId=obj.id;
+  renderProductList();renderActiveProduct();toast('Product preset saved 💾');
+}
+function renderProductList(){
+  const ps=products();const w=$('productList');w.innerHTML='';
+  if(!ps.length){w.innerHTML='<div class="muted">No products yet.</div>';return;}
+  ps.forEach(p=>{
+    const d=document.createElement('div');d.className='list-item';
+    d.innerHTML=`<div><div class="ttl">${p.name}<span class="pill">${p.cat}</span></div>
+      <div class="meta">${p.print||''} ${p.price?'· '+p.price:''}</div></div>
+      <div style="display:flex;gap:7px">
+        <button class="btn btn-ghost btn-sm">✎ Edit</button>
+        <button class="btn btn-ghost btn-sm">✦ Use</button>
+        <button class="btn btn-pink btn-sm">🗑</button>
+      </div>`;
+    const [editB,useB,delB]=d.querySelectorAll('button');
+    editB.onclick=()=>{loadProductForm(p);window.scrollTo({top:0,behavior:'smooth'});};
+    useB.onclick=()=>{state.activeProduct=p.id;persistUI();renderActiveProduct();go('generate');toast('Active product set ✦');};
+    delB.onclick=()=>{const arr=products().filter(x=>x.id!==p.id);write(LS.products,arr);renderProductList();renderActiveProduct();toast('Deleted');};
+    w.appendChild(d);
+  });
+}
+
+/* ============================================================
+   COPY BANK
+   ============================================================ */
+function loadBanksForm(){
+  const bk=banks();
+  $('bank_head').value=bk.head.join('\n');$('bank_sub').value=bk.sub.join('\n');
+  $('bank_cta').value=bk.cta.join('\n');$('bank_tag').value=bk.tag.join('\n');
+}
+function saveBanks(){
+  const lines=v=>v.split('\n').map(x=>x.trim()).filter(Boolean);
+  write(LS.banks,{head:lines($('bank_head').value),sub:lines($('bank_sub').value),cta:lines($('bank_cta').value),tag:lines($('bank_tag').value)});
+  fillDatalists();toast('Copy bank saved 💾');
+}
+function resetBanks(){write(LS.banks,DEFAULT_BANKS);loadBanksForm();fillDatalists();toast('Defaults restored');}
+function fillDatalists(){
+  const bk=banks();
+  const fill=(id,arr)=>{const dl=$(id);dl.innerHTML='';arr.forEach(v=>{const o=document.createElement('option');o.value=v;dl.appendChild(o);});};
+  fill('dl-headline',bk.head);fill('dl-sub',bk.sub);fill('dl-cta',bk.cta);
+}
+
+/* ============================================================
+   EXPORT / IMPORT / CLEAR
+   ============================================================ */
+function exportData(){
+  const data={brand:brand(),products:products(),banks:banks(),history:read(LS.history,[]),ui:state,exported:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='ana-prompt-data.json';a.click();
+  toast('Exported JSON ⤓');
+}
+function importData(e){
+  const file=e.target.files[0];if(!file)return;
+  const r=new FileReader();
+  r.onload=()=>{
+    try{
+      const d=JSON.parse(r.result);
+      if(d.brand)write(LS.brand,d.brand);
+      if(d.products)write(LS.products,d.products);
+      if(d.banks)write(LS.banks,d.banks);
+      if(d.history)write(LS.history,d.history);
+      if(d.ui){state=d.ui;persistUI();}
+      initAll();toast('Imported ✓');
+    }catch(err){toast('Invalid JSON file');}
+  };
+  r.readAsText(file);e.target.value='';
+}
+function clearData(){
+  if(!confirm('Clear ALL local data (brand, products, banks, history)? This cannot be undone.'))return;
+  Object.values(LS).forEach(k=>localStorage.removeItem(k));
+  state=read(LS.ui,{ct:'Single Instagram Post',theme:THEMES[0].id,layout:LAYOUTS[0],quality:{},outTab:'Full Prompt'});
+  QUALITY.forEach(q=>state.quality[q]=!['Paid-ad ready','Keep grid consistency'].includes(q));
+  lastOutputs=null;initAll();toast('Local data cleared 🗑');
+}
+
+/* ============================================================
+   INIT
+   ============================================================ */
+function initAll(){
+  renderContentTypes();renderThemes();renderLayouts();renderQuality();renderActiveProduct();
+  updateConditionalBlocks();renderOutTabs();
+  loadBrandForm();loadProductForm(null);loadBanksForm();fillDatalists();renderProductList();renderHistory();
+  $('p_imgcount').onchange=()=>{};
+}
+initAll();
+</script>
+</body>
+</html>
